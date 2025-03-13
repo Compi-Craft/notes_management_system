@@ -41,6 +41,12 @@ def create_access_token(data: dict) -> str:
 
 @app.post("/users/", response_model=dict)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    check_user = db.query(User).filter(User.username == user.username).first()
+    if check_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User already exists"
+        )
     hashed_password = pwd_context.hash(user.password)
     new_user = User(username=user.username, password_hash=hashed_password)
     db.add(new_user)

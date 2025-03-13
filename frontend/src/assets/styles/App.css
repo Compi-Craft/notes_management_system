@@ -1,0 +1,22 @@
+#app {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 20px;
+  }
+  
+  .analytics {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  h2 {
+    color: #2c3e50;
+  }
+  
+  .loading {
+    font-size: 1.2rem;
+    color: #3498db;
+  }
+  
