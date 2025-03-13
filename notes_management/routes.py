@@ -2,14 +2,12 @@ import jwt
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
-from datetime import timedelta, datetime
-from notes_management import app, SessionLocal, oauth2_scheme, pwd_context
-from notes_management.models import User, Note, NoteVersion, UserCreate, NoteCreateRequest, \
-    NoteVersionResponse, NoteUpdateRequest
+from notes_management import app, SessionLocal, oauth2_scheme, pwd_context, SECRET_KEY, ALGORITHM
+from notes_management.models import User, Note, NoteVersion
+from notes_management.pydantic_models import *
+from notes_management.gemini_api import summarize_note_content
 from typing import List
 
-SECRET_KEY = "your-secret-key"
-ALGORITHM = "HS256"
 
 def get_db():
     db = SessionLocal()
@@ -31,15 +29,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except jwt.PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
 
-@app.post("/users/", response_model=dict)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    hashed_password = pwd_context.hash(user.password)
-    new_user = User(username=user.username, password_hash=hashed_password)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return {"id": new_user.id, "username": new_user.username}
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -48,6 +37,14 @@ def create_access_token(data: dict) -> str:
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+@app.post("/users/", response_model=dict)
+def create_user(user: UserCreate, db: Session = Depends(get_db)):
+    hashed_password = pwd_context.hash(user.password)
+    new_user = User(username=user.username, password_hash=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"id": new_user.id, "username": new_user.username}
 
 @app.post("/token", response_model=dict)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -62,33 +59,52 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/notes/", response_model=dict)
-def create_note(note: NoteCreateRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+async def create_note(note: NoteCreateRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     new_note = Note(title=note.title, content=note.content, user_id=user.id)
+    
+    summary = await summarize_note_content(note.content)
+    new_note.summary = summary
+    
     db.add(new_note)
     db.commit()
     db.refresh(new_note)
-    return {"id": new_note.id, "title": new_note.title, "content": new_note.content}
+    
+    return {
+        "id": new_note.id,
+        "title": new_note.title,
+        "content": new_note.content,
+        "summary": new_note.summary
+    }
+
 
 @app.get("/notes/{note_id}", response_model=dict)
 def read_note(note_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     note = db.query(Note).filter(Note.id == note_id, Note.user_id == user.id).first()
     if note is None:
         raise HTTPException(status_code=404, detail="Note not found")
-    return {"id": note.id, "title": note.title, "content": note.content, "updated_at": note.updated_at}
+    return {"id": note.id, "title": note.title, "content": note.content, "summary": note.summary, "updated_at": note.updated_at}
 
 @app.put("/notes/{note_id}", response_model=dict)
-def update_note(note_id: int, note: NoteUpdateRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+async def update_note(note_id: int, note: NoteUpdateRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     note_db = db.query(Note).filter(Note.id == note_id, Note.user_id == user.id).first()
     if note_db is None:
         raise HTTPException(status_code=404, detail="Note not found")
-    
-    note_version = NoteVersion(note_id=note_db.id, title=note_db.title, content=note_db.content)
+    note_version = NoteVersion(note_id=note_db.id, title=note_db.title, content=note_db.content, summary = note_db.summary)
     db.add(note_version)
     note_db.title = note.title
     note_db.content = note.content
+    note_db.summary = await summarize_note_content(note.content)
+    
     db.commit()
     db.refresh(note_db)
-    return {"id": note_db.id, "title": note_db.title, "content": note_db.content}
+    
+    return {
+        "id": note_db.id,
+        "title": note_db.title,
+        "content": note_db.content,
+        "summary": note_db.summary
+    }
+
 
 @app.delete("/notes/{note_id}", response_model=dict)
 def delete_note(note_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
@@ -102,4 +118,4 @@ def delete_note(note_id: int, db: Session = Depends(get_db), user: User = Depend
 @app.get("/notes/{note_id}/versions", response_model=List[NoteVersionResponse])
 def get_note_versions(note_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     versions = db.query(NoteVersion).join(Note).filter(NoteVersion.note_id == note_id, Note.user_id == user.id).all()
-    return [{"id": v.id, "title": v.title, "content": v.content, "created_at": v.created_at} for v in versions]
+    return [{"id": v.id, "title": v.title, "content": v.content, "summary": v.summary, "created_at": v.created_at} for v in versions]
