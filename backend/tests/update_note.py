@@ -2,7 +2,12 @@ import requests
 
 url = 'http://127.0.0.1:8000/notes/1'
 
-token = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0dXNlciJ9.Lfu5W6lM7CUNgQFJi30Xi0oYCzK9-sC9AnY_5Dq2lV8'
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+token = os.getenv("TOKEN")
 
 headers = {
     'Authorization': f'Bearer {token}',

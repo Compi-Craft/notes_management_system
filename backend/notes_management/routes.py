@@ -7,7 +7,9 @@ from notes_management.models import User, Note, NoteVersion
 from notes_management.pydantic_models import *
 from notes_management.gemini_api import summarize_note_content
 from typing import List
+from notes_management.analytics import router as analytics_router
 
+app.include_router(analytics_router)
 
 def get_db():
     db = SessionLocal()
