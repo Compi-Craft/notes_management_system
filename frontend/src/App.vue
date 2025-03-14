@@ -7,7 +7,13 @@
     </div>
 
     <div v-else>
-      <div class="analytics">
+      <!-- If analytics is null, show "No notes" -->
+      <div v-if="!analytics">
+        <p>No notes</p>
+      </div>
+
+      <!-- If analytics is available, show the data -->
+      <div v-else class="analytics">
         <h2>Total Word Count</h2>
         <p>{{ analytics.total_word_count }}</p>
 
