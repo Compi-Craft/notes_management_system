@@ -1,8 +1,24 @@
 # Notes management system:
 Author: <mark>Bohdan Ozarko</mark><br>
 
+# Project is deployed on AWS (amazon web service)
+## Vue page: http://3.126.152.192:8080/
+## RestAPI endpoint: http://3.126.152.192:8000/ 
+
 ## Prerequisites
 python3, pip, docker, vue-client, gemini_api_key<br>
+### For vue:
+```cd ./backend```<br>
+```sudo apt install npm```<br>
+```npm install @vue/cli-service --save-dev```<br>
+### For docker:
+```sudo apt update```<br>
+```sudo apt install apt-transport-https ca-certificates curl software-properties-common```<br>
+```curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg```<br>
+```sudo sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list'```<br>
+```sudo apt update```<br>
+```sudo apt install docker-ce docker-ce-cli containerd.io```<br>
+
 ### Create .env file in "notes_management" folder: <br>
 ```nano ./backend/notes_management/.env```<br>
 ### Paste in gemini_api key:<br>
