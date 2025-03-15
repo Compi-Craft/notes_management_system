@@ -1,17 +1,21 @@
+"Routes module"
+
+from typing import List
 import jwt
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from notes_management import app, SessionLocal, oauth2_scheme, pwd_context, SECRET_KEY, ALGORITHM
 from notes_management.models import User, Note, NoteVersion
-from notes_management.pydantic_models import *
+from notes_management.pydantic_models import UserCreate, NoteCreateRequest, NoteUpdateRequest, NoteVersionResponse
 from notes_management.gemini_api import summarize_note_content
-from typing import List
+
 from notes_management.analytics import router as analytics_router
 
 app.include_router(analytics_router)
 
 def get_db():
+    "Get db function"
     db = SessionLocal()
     try:
         yield db
@@ -19,6 +23,7 @@ def get_db():
         db.close()
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    "Gets current user by token"
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
@@ -116,6 +121,7 @@ async def update_note(note_id: int, note: NoteUpdateRequest, db: Session = Depen
 
 @app.delete("/notes/{note_id}", response_model=dict)
 def delete_note(note_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    "Delete note route"
     note = db.query(Note).filter(Note.id == note_id, Note.user_id == user.id).first()
     if note is None:
         raise HTTPException(status_code=404, detail="Note not found")
@@ -124,6 +130,11 @@ def delete_note(note_id: int, db: Session = Depends(get_db), user: User = Depend
     return {"message": "Note deleted successfully"}
 
 @app.get("/notes/{note_id}/versions", response_model=List[NoteVersionResponse])
-def get_note_versions(note_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
-    versions = db.query(NoteVersion).join(Note).filter(NoteVersion.note_id == note_id, Note.user_id == user.id).all()
-    return [{"id": v.id, "title": v.title, "content": v.content, "summary": v.summary, "created_at": v.created_at} for v in versions]
+def get_note_versions(note_id: int,
+                      db: Session = Depends(get_db),
+                      user: User = Depends(get_current_user)):
+    "Get note versions route"
+    versions = db.query(NoteVersion).join(Note).filter(NoteVersion.note_id == note_id, 
+        Note.user_id == user.id).all()
+    return [{"id": v.id, "title": v.title, "content": v.content,
+             "summary": v.summary, "created_at": v.created_at} for v in versions]

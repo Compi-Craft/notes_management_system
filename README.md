@@ -1,7 +1,3 @@
-# notes_management_system
-
-```npm install -g @vue/cli```
-
 # Notes management system:
 Author: <mark>Bohdan Ozarko</mark><br>
 
@@ -26,6 +22,7 @@ python3, pip, docker, vue-client, gemini_api_key<br>
 ### To run frontend:<br>
 ```cd ./frontend```<br>
 ```npm run serve```
+### Vue is runned on port 8080
 ### Run pytest
 ```cd ./backend```<br>
 ```pytest --cov=notes_management --cov-report=term-missing```<br>

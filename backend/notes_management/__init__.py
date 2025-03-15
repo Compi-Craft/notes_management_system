@@ -1,10 +1,12 @@
+"Init module"
+
 import os
 from fastapi import FastAPI
+from fastapi.security import OAuth2PasswordBearer
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer
-from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from notes_management.models import Base
 from google import genai
