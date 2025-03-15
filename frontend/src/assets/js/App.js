@@ -14,7 +14,7 @@ export default {
   methods: {
     async fetchAnalyticsData() {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/analytics");
+        const response = await axios.get("http://3.126.152.192:8000/analytics");
         this.analytics = response.data;
         this.loading = false;
       } catch (error) {
