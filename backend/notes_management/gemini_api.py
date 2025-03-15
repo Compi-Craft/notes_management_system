@@ -1,9 +1,13 @@
+"Gemini api module"
+
 from fastapi import HTTPException
 from notes_management import client
 
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta" \
+"/models/gemini-2.0-flash:generateContent"
 
 async def summarize_note_content(content: str) -> str:
+    "Summarizes note content"
     response = client.models.generate_content(
         model="gemini-2.0-flash",
         contents=["Summarize note:\n" + content])

@@ -1,12 +1,14 @@
+"Analytics route"
+
+from collections import Counter
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from notes_management import SessionLocal
+from notes_management.models import Note
 import pandas as pd
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from collections import Counter
-from notes_management.models import Note
 
 nltk.download('stopwords')
 nltk.download('punkt')
@@ -15,6 +17,7 @@ nltk.download('punkt_tab')
 router = APIRouter()
 
 def get_db():
+    "Get db function"
     db = SessionLocal()
     try:
         yield db
@@ -22,6 +25,7 @@ def get_db():
         db.close()
 
 def clean_and_tokenize(text: str):
+    "Removes stop words from analytics"
     stop_words = set(stopwords.words('english'))
     tokens = word_tokenize(text.lower())
     cleaned_tokens = [word for word in tokens if word.isalpha() and word not in stop_words]
@@ -29,6 +33,7 @@ def clean_and_tokenize(text: str):
 
 @router.get("/analytics", response_model=dict)
 def get_notes_analytics(db: Session = Depends(get_db)):
+    "Get notes function"
     notes = db.query(Note).all()
 
     if not notes:
